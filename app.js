@@ -7,7 +7,29 @@ dotenv.config();
 
 const app = express();
 
-app.use(cors({ origin: "http://localhost:3000" })); // Adjust for frontend
+const allowedOrigins = [
+  process.env.FRONTEND_URL || "https://fifthlab-collaboration.onrender.com",
+  "http://localhost:3000",
+  "http://localhost:8080",
+  "http://localhost:2212",
+  "http://localhost:2213",
+  "https://msg-app-5mwq.vercel.app",
+  "http://localhost:5173",
+];
+
+app.use(
+  cors({
+    origin: function (origin, callback) {
+      if (!origin || allowedOrigins.includes(origin)) {
+        return callback(null, true);
+      }
+      callback(new AppError(`CORS policy: Origin ${origin} not allowed`, 403));
+    },
+    credentials: true,
+    methods: ["GET", "POST", "PATCH", "DELETE", "PUT"],
+    allowedHeaders: ["Content-Type", "Authorization"],
+  })
+); // Adjust for frontend
 app.use(express.json());
 
 const authRoutes = require("./routes/authRoutes");
