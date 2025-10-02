@@ -37,7 +37,19 @@ const moodRoutes = require("./routes/moodRoutes");
 const noteRoutes = require("./routes/noteRoutes");
 const profileRoutes = require("./routes/profileRoutes");
 const insightRoutes = require("./routes/insightRoutes");
-
+const MoodEntry = require("./models/MoodEntry"); // Ensure this import exists
+const protect = require("./middleware/authMiddleware");
+// Add this route after other mood routes
+app.get("/moods", protect, async (req, res) => {
+  try {
+    const moods = await MoodEntry.find({ user: req.user.id })
+      .sort({ timestamp: -1 })
+      .limit(10);
+    res.json(moods);
+  } catch (err) {
+    res.status(500).send("Server error");
+  }
+});
 app.use("/auth", authRoutes);
 app.use("/moods", moodRoutes);
 app.use("/notes", noteRoutes);
