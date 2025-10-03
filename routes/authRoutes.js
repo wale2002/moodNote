@@ -5,6 +5,7 @@ const {
   login,
   forgotPassword,
   changePassword,
+  getMe,
 } = require("../controllers/authController");
 const auth = require("../middleware/authMiddleware");
 

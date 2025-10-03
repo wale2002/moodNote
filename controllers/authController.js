@@ -110,13 +110,11 @@ exports.signup = async (req, res) => {
   try {
     let user = await User.findOne({ $or: [{ email }, { username }] });
     if (user)
-      return res
-        .status(400)
-        .json({
-          statusCode: 400,
-          status: "error",
-          message: "User already exists",
-        });
+      return res.status(400).json({
+        statusCode: 400,
+        status: "error",
+        message: "User already exists",
+      });
 
     user = new User({ email, username, password });
 
@@ -132,14 +130,12 @@ exports.signup = async (req, res) => {
       { expiresIn: process.env.JWT_EXPIRES_IN },
       (err, token) => {
         if (err) throw err;
-        res
-          .status(201)
-          .json({
-            statusCode: 201,
-            status: "success",
-            data: { token },
-            message: "User created successfully",
-          });
+        res.status(201).json({
+          statusCode: 201,
+          status: "success",
+          data: { token },
+          message: "User created successfully",
+        });
       }
     );
   } catch (err) {
@@ -156,23 +152,19 @@ exports.login = async (req, res) => {
       $or: [{ email: identifier }, { username: identifier }],
     });
     if (!user)
-      return res
-        .status(400)
-        .json({
-          statusCode: 400,
-          status: "error",
-          message: "Invalid credentials",
-        });
+      return res.status(400).json({
+        statusCode: 400,
+        status: "error",
+        message: "Invalid credentials",
+      });
 
     const isMatch = await bcrypt.compare(password, user.password);
     if (!isMatch)
-      return res
-        .status(400)
-        .json({
-          statusCode: 400,
-          status: "error",
-          message: "Invalid credentials",
-        });
+      return res.status(400).json({
+        statusCode: 400,
+        status: "error",
+        message: "Invalid credentials",
+      });
 
     // Return user data without password
     const userData = {
@@ -181,14 +173,12 @@ exports.login = async (req, res) => {
       username: user.username,
     };
 
-    res
-      .status(200)
-      .json({
-        statusCode: 200,
-        status: "success",
-        data: userData,
-        message: "Login successful",
-      });
+    res.status(200).json({
+      statusCode: 200,
+      status: "success",
+      data: userData,
+      message: "Login successful",
+    });
   } catch (err) {
     res
       .status(500)
@@ -217,13 +207,11 @@ exports.forgotPassword = async (req, res) => {
       `Click here to reset: ${resetLink}`
     );
 
-    res
-      .status(200)
-      .json({
-        statusCode: 200,
-        status: "success",
-        message: "Reset email sent",
-      });
+    res.status(200).json({
+      statusCode: 200,
+      status: "success",
+      message: "Reset email sent",
+    });
   } catch (err) {
     res
       .status(500)
@@ -237,25 +225,49 @@ exports.changePassword = async (req, res) => {
     const user = await User.findById(req.user.id);
     const isMatch = await bcrypt.compare(oldPassword, user.password);
     if (!isMatch)
-      return res
-        .status(400)
-        .json({
-          statusCode: 400,
-          status: "error",
-          message: "Invalid old password",
-        });
+      return res.status(400).json({
+        statusCode: 400,
+        status: "error",
+        message: "Invalid old password",
+      });
 
     const salt = await bcrypt.genSalt(10);
     user.password = await bcrypt.hash(newPassword, salt);
     await user.save();
 
+    res.status(200).json({
+      statusCode: 200,
+      status: "success",
+      message: "Password changed",
+    });
+  } catch (err) {
     res
-      .status(200)
-      .json({
-        statusCode: 200,
-        status: "success",
-        message: "Password changed",
-      });
+      .status(500)
+      .json({ statusCode: 500, status: "error", message: "Server error" });
+  }
+};
+// backend/controllers/authController.js (add this export alongside existing ones)
+
+exports.getMe = async (req, res) => {
+  try {
+    const user = await User.findById(req.user.id).select("-password"); // Exclude password
+    if (!user) {
+      return res
+        .status(404)
+        .json({ statusCode: 404, status: "error", message: "User not found" });
+    }
+
+    res.status(200).json({
+      statusCode: 200,
+      status: "success",
+      data: {
+        id: user.id,
+        email: user.email,
+        username: user.username,
+        // Add other fields if needed (e.g., createdAt)
+      },
+      message: "User details fetched successfully",
+    });
   } catch (err) {
     res
       .status(500)
