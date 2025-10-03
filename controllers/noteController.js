@@ -7,7 +7,30 @@ const {
   getTodayCount,
   getTotalCount,
 } = require("../utils/trendCalculator");
+// backend/controllers/noteController.js (add this export alongside createNote)
 
+exports.getNotes = async (req, res) => {
+  try {
+    const { limit = 10, page = 1 } = req.query; // Optional pagination
+    const skip = (page - 1) * limit;
+
+    const notes = await Note.find({ user: req.user.id })
+      .sort({ date: -1 })
+      .skip(skip)
+      .limit(parseInt(limit));
+
+    const total = await Note.countDocuments({ user: req.user.id });
+
+    res.json({
+      notes,
+      total,
+      pages: Math.ceil(total / limit),
+      currentPage: parseInt(page),
+    });
+  } catch (err) {
+    res.status(500).send("Server error");
+  }
+};
 exports.createNote = async (req, res) => {
   const { content } = req.body;
   try {

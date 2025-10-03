@@ -2,6 +2,7 @@
 const express = require("express");
 const {
   createNote,
+  getNotes,
   getDailyPrompt,
   getTodayCount,
   getTotalCount,
@@ -11,7 +12,7 @@ const {
 const auth = require("../middleware/authMiddleware");
 
 const router = express.Router();
-
+router.get("/", auth, getNotes);
 router.post("/create", auth, createNote);
 router.get("/daily-prompt", auth, getDailyPrompt);
 router.get("/today-count", auth, getTodayCount);
