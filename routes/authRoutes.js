@@ -11,6 +11,7 @@ const auth = require("../middleware/authMiddleware");
 const router = express.Router();
 
 router.post("/signup", signup);
+router.get("/me", auth, getMe);
 router.post("/login", login);
 router.post("/forgot", forgotPassword);
 router.post("/change-password", auth, changePassword);
