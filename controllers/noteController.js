@@ -117,6 +117,7 @@
 //   }
 // };
 
+
 // backend/controllers/noteController.js
 const Note = require("../models/Note");
 const MoodEntry = require("../models/MoodEntry");
@@ -249,15 +250,33 @@ exports.saveMoodAndNote = async (req, res) => {
   session.startTransaction();
 
   try {
+    // Normalize mood to lowercase to match enum and mapper
+    const normalizedMood = mood.toLowerCase().trim();
+
+    // Validate mood against enum
+    const validMoods = ["ecstatic", "happy", "stressed", "peaceful"];
+    if (!validMoods.includes(normalizedMood)) {
+      throw new Error(`Invalid mood: ${mood}. Must be one of: ${validMoods.join(", ")}`);
+    }
+
     // Map mood to value (reuse your existing utility)
-    const value = mapMoodToValue(mood);
+    const value = mapMoodToValue(normalizedMood);
 
     // Save mood entry
-    const moodEntry = new MoodEntry({ mood, value, user: req.user.id });
+    const moodEntry = new MoodEntry({ 
+      mood: normalizedMood, 
+      value, 
+      user: req.user.id,
+      timestamp: new Date() // Explicitly set if needed
+    });
     await moodEntry.save({ session });
 
     // Save note entry
-    const note = new Note({ content, user: req.user.id });
+    const note = new Note({ 
+      content: content.trim(), 
+      user: req.user.id,
+      date: new Date() // Explicitly set if needed
+    });
     await note.save({ session });
 
     // Commit if both succeed
@@ -276,10 +295,10 @@ exports.saveMoodAndNote = async (req, res) => {
     // Rollback on error
     await session.abortTransaction();
     session.endSession();
-    console.error(err); // Log for debugging
+    console.error('Error in saveMoodAndNote:', err); // Enhanced logging
     res
       .status(500)
-      .json({ statusCode: 500, status: "error", message: "Server error" });
+      .json({ statusCode: 500, status: "error", message: err.message || "Server error" });
   }
 };
 exports.getMoodsNote = async (req, res) => {
