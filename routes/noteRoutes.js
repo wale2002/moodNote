@@ -8,6 +8,8 @@ const {
   getTotalCount,
   getStreak,
   getWeekProgress,
+  saveMoodAndNote,
+  getMoodsNote,
 } = require("../controllers/noteController");
 const auth = require("../middleware/authMiddleware");
 
@@ -19,5 +21,6 @@ router.get("/today-count", auth, getTodayCount);
 router.get("/total-count", auth, getTotalCount);
 router.get("/streak", auth, getStreak);
 router.get("/week-progress", auth, getWeekProgress);
-
+router.get("/mood-note", auth, getMoodsNote);
+router.post("/mood-and-note", auth, saveMoodAndNote);
 module.exports = router;
