@@ -166,19 +166,30 @@ exports.login = async (req, res) => {
         message: "Invalid credentials",
       });
 
-    // Return user data without password
-    const userData = {
-      id: user.id,
-      email: user.email,
-      username: user.username,
-    };
+    // Generate JWT token (same payload as signup)
+    const payload = { user: { id: user.id } };
+    jwt.sign(
+      payload,
+      process.env.JWT_SECRET,
+      { expiresIn: process.env.JWT_EXPIRES_IN },
+      (err, token) => {
+        if (err) throw err;
 
-    res.status(200).json({
-      statusCode: 200,
-      status: "success",
-      data: userData,
-      message: "Login successful",
-    });
+        // Return user data without password + token
+        const userData = {
+          id: user.id,
+          email: user.email,
+          username: user.username,
+        };
+
+        res.status(200).json({
+          statusCode: 200,
+          status: "success",
+          data: { ...userData, token }, // Include token in data
+          message: "Login successful",
+        });
+      }
+    );
   } catch (err) {
     res
       .status(500)
