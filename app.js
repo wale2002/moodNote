@@ -13,6 +13,7 @@ const allowedOrigins = [
   "http://localhost:8080",
   "http://localhost:2212",
   "http://localhost:2213",
+  "http://localhost:2214",
   "https://mood-note-front.vercel.app",
   "http://localhost:5173",
 ];
