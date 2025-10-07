@@ -117,7 +117,6 @@
 //   }
 // };
 
-
 // backend/controllers/noteController.js
 const Note = require("../models/Note");
 const MoodEntry = require("../models/MoodEntry");
@@ -128,7 +127,9 @@ const {
   getStreak,
   getWeekProgress,
   getTodayCount,
+  getTotalStreaks,
   getTotalCount,
+  getWeeklyMoodCounts,
 } = require("../utils/trendCalculator");
 // backend/controllers/noteController.js (add this export alongside createNote)
 
@@ -230,6 +231,19 @@ exports.getStreak = async (req, res) => {
       .json({ statusCode: 500, status: "error", message: "Server error" });
   }
 };
+// utils/trendCalculator.js (add this function to the existing module exports)
+exports.getTotalStreaks = async (req, res) => {
+  try {
+    const totalStreaks = await getTotalStreaks(req.user.id); // Fixed: now calls the correct imported function
+    res
+      .status(200)
+      .json({ statusCode: 200, status: "success", data: { totalStreaks } });
+  } catch (err) {
+    res
+      .status(500)
+      .json({ statusCode: 500, status: "error", message: "Server error" });
+  }
+};
 
 exports.getWeekProgress = async (req, res) => {
   try {
@@ -256,26 +270,28 @@ exports.saveMoodAndNote = async (req, res) => {
     // Validate mood against enum
     const validMoods = ["ecstatic", "happy", "stressed", "peaceful"];
     if (!validMoods.includes(normalizedMood)) {
-      throw new Error(`Invalid mood: ${mood}. Must be one of: ${validMoods.join(", ")}`);
+      throw new Error(
+        `Invalid mood: ${mood}. Must be one of: ${validMoods.join(", ")}`
+      );
     }
 
     // Map mood to value (reuse your existing utility)
     const value = mapMoodToValue(normalizedMood);
 
     // Save mood entry
-    const moodEntry = new MoodEntry({ 
-      mood: normalizedMood, 
-      value, 
+    const moodEntry = new MoodEntry({
+      mood: normalizedMood,
+      value,
       user: req.user.id,
-      timestamp: new Date() // Explicitly set if needed
+      timestamp: new Date(), // Explicitly set if needed
     });
     await moodEntry.save({ session });
 
     // Save note entry
-    const note = new Note({ 
-      content: content.trim(), 
+    const note = new Note({
+      content: content.trim(),
       user: req.user.id,
-      date: new Date() // Explicitly set if needed
+      date: new Date(), // Explicitly set if needed
     });
     await note.save({ session });
 
@@ -295,10 +311,12 @@ exports.saveMoodAndNote = async (req, res) => {
     // Rollback on error
     await session.abortTransaction();
     session.endSession();
-    console.error('Error in saveMoodAndNote:', err); // Enhanced logging
-    res
-      .status(500)
-      .json({ statusCode: 500, status: "error", message: err.message || "Server error" });
+    console.error("Error in saveMoodAndNote:", err); // Enhanced logging
+    res.status(500).json({
+      statusCode: 500,
+      status: "error",
+      message: err.message || "Server error",
+    });
   }
 };
 exports.getMoodsNote = async (req, res) => {

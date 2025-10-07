@@ -10,6 +10,7 @@ const {
   getWeekProgress,
   saveMoodAndNote,
   getMoodsNote,
+  getTotalStreaks,
 } = require("../controllers/noteController");
 const auth = require("../middleware/authMiddleware");
 
@@ -19,6 +20,7 @@ router.post("/", auth, createNote); // Changed from "/create" to "/" to match fr
 router.get("/daily-prompt", auth, getDailyPrompt);
 router.get("/today-count", auth, getTodayCount);
 router.get("/total-count", auth, getTotalCount);
+router.get("/total-streaks", auth, getTotalStreaks);
 router.get("/streak", auth, getStreak);
 router.get("/week-progress", auth, getWeekProgress);
 router.get("/moods-note", auth, getMoodsNote); // Changed from "/mood-note" to "/moods-note" to match frontend
