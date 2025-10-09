@@ -73,23 +73,39 @@ exports.getPieData = async (userId) => {
   return pie;
 };
 
+// Update in backend/utils/trendCalculator.js
 exports.getPositiveDaysPercentage = async (userId) => {
   const userObjectId = new mongoose.Types.ObjectId(userId);
-  const moods = await MoodEntry.find({ user: userObjectId });
-  if (!moods.length) return { percentage: 0, text: "Start tracking" };
 
-  const uniqueDays = [
-    ...new Set(moods.map((m) => moment(m.timestamp).format("YYYY-MM-DD"))),
-  ];
-  const positiveDays = uniqueDays.filter((day) => {
-    const dayMoods = moods.filter(
-      (m) => moment(m.timestamp).format("YYYY-MM-DD") === day
-    );
-    const avg = dayMoods.reduce((sum, m) => sum + m.value, 0) / dayMoods.length;
-    return avg > 1.5;
-  }).length;
+  // Reuse the aggregation logic from getIndividualMoodCounts
+  const counts = await MoodEntry.aggregate([
+    { $match: { user: userObjectId } },
+    { $group: { _id: "$mood", count: { $sum: 1 } } },
+  ]);
 
-  const percentage = Math.round((positiveDays / uniqueDays.length) * 100);
+  const moodCounts = {
+    ecstatic: 0,
+    happy: 0,
+    stressed: 0,
+    peaceful: 0,
+  };
+
+  counts.forEach((c) => {
+    if (moodCounts.hasOwnProperty(c._id)) {
+      moodCounts[c._id] = c.count;
+    }
+  });
+
+  const totalMoods = Object.values(moodCounts).reduce(
+    (sum, count) => sum + count,
+    0
+  );
+  if (totalMoods === 0) return { percentage: 0, text: "Start tracking" };
+
+  // Positive moods: ecstatic (3) + happy (2)
+  const positiveMoods = moodCounts.ecstatic + moodCounts.happy;
+  const percentage = Math.round((positiveMoods / totalMoods) * 100);
+
   let text = "";
   if (percentage >= 80) text = "Great outlook";
   else if (percentage >= 50) text = "Balanced";
@@ -97,6 +113,53 @@ exports.getPositiveDaysPercentage = async (userId) => {
 
   return { percentage, text };
 };
+// exports.getPositiveDaysPercentage = async (userId) => {
+//   const userObjectId = new mongoose.Types.ObjectId(userId);
+//   const moods = await MoodEntry.find({ user: userObjectId });
+//   if (!moods.length) return { percentage: 0, text: "Start tracking" };
+
+//   // Optional: Rolling window for recency (ignores data >30 days old)
+//   const thirtyDaysAgo = moment().subtract(30, "days").startOf("day");
+//   const recentMoods = moods.filter((m) => moment(m.timestamp) >= thirtyDaysAgo);
+
+//   if (!recentMoods.length)
+//     return { percentage: 0, text: "Start tracking recent moods" };
+
+//   // Optimize: Group by day upfront
+//   const moodsByDay = recentMoods.reduce((acc, m) => {
+//     const day = moment(m.timestamp).format("YYYY-MM-DD");
+//     if (!acc[day]) acc[day] = [];
+//     acc[day].push(m.value);
+//     return acc;
+//   }, {});
+
+//   const uniqueDays = Object.keys(moodsByDay);
+//   const MIN_DAYS = 3; // Lowered for quicker feedback
+
+//   if (uniqueDays.length < MIN_DAYS) {
+//     return {
+//       percentage: 0,
+//       text: `Track more days to see stats (have ${uniqueDays.length})`,
+//     };
+//   }
+
+//   const positiveDays = uniqueDays.filter((day) => {
+//     const values = moodsByDay[day];
+//     const avg = values.reduce((sum, v) => sum + v, 0) / values.length;
+//     return avg >= 1.5; // Changed to >= for borderline days
+//   }).length;
+
+//   const percentage = Math.round((positiveDays / uniqueDays.length) * 100);
+//   let text = "";
+//   if (percentage >= 80) text = "Great outlook";
+//   else if (percentage >= 50) text = "Balanced";
+//   else text = "Room for growth";
+
+//   // Disclaimer for small samples
+//   if (uniqueDays.length < 7) text += ` (based on ${uniqueDays.length} days)`;
+
+//   return { percentage, text };
+// };
 
 exports.getStreak = async (userId) => {
   const userObjectId = new mongoose.Types.ObjectId(userId); // Add for consistency (though find handles strings)
