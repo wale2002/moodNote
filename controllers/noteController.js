@@ -345,3 +345,38 @@ exports.getMoodsNote = async (req, res) => {
       .json({ statusCode: 500, status: "error", message: "Server error" });
   }
 };
+// Add this to backend/controllers/noteController.js or moodController.js
+// (preferably noteController.js since it already handles combined mood+note operations)
+
+exports.deleteAllNotesAndMoods = async (req, res) => {
+  const session = await mongoose.startSession(); // Use transaction for atomicity
+  session.startTransaction();
+
+  try {
+    // Delete all notes for the user
+    await Note.deleteMany({ user: req.user.id }, { session });
+
+    // Delete all mood entries for the user
+    await MoodEntry.deleteMany({ user: req.user.id }, { session });
+
+    // Commit the transaction
+    await session.commitTransaction();
+    session.endSession();
+
+    res.status(200).json({
+      statusCode: 200,
+      status: "success",
+      message: "All notes and moods deleted successfully",
+    });
+  } catch (err) {
+    // Rollback on error
+    await session.abortTransaction();
+    session.endSession();
+    console.error("Error deleting all notes and moods:", err);
+    res.status(500).json({
+      statusCode: 500,
+      status: "error",
+      message: "Server error",
+    });
+  }
+};

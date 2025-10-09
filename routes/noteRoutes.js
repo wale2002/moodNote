@@ -11,10 +11,12 @@ const {
   saveMoodAndNote,
   getMoodsNote,
   getTotalStreaks,
+  deleteAllNotesAndMoods,
 } = require("../controllers/noteController");
 const auth = require("../middleware/authMiddleware");
 
 const router = express.Router();
+router.delete("/notes-and-moods", auth, deleteAllNotesAndMoods);
 router.get("/", auth, getNotes);
 router.post("/", auth, createNote); // Changed from "/create" to "/" to match frontend POST /api/notes
 router.get("/daily-prompt", auth, getDailyPrompt);
