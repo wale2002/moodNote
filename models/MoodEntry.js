@@ -4,7 +4,7 @@ const mongoose = require("mongoose");
 const MoodEntrySchema = new mongoose.Schema({
   mood: {
     type: String,
-    enum: ["ecstatic", "happy", "sad", "peaceful"],
+    enum: ["ecstatic", "happy", "stressed", "peaceful"],
     required: true,
   },
   value: { type: Number, min: 0, max: 3, required: true },

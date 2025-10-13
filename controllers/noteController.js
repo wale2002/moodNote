@@ -268,7 +268,7 @@ exports.saveMoodAndNote = async (req, res) => {
     const normalizedMood = mood.toLowerCase().trim();
 
     // Validate mood against enum
-    const validMoods = ["ecstatic", "happy", "sad", "peaceful"];
+    const validMoods = ["ecstatic", "happy", "stressed", "peaceful"];
     if (!validMoods.includes(normalizedMood)) {
       throw new Error(
         `Invalid mood: ${mood}. Must be one of: ${validMoods.join(", ")}`

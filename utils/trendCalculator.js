@@ -86,7 +86,7 @@ exports.getPositiveDaysPercentage = async (userId) => {
   const moodCounts = {
     ecstatic: 0,
     happy: 0,
-    sad: 0,
+    stressed: 0,
     peaceful: 0,
   };
 
@@ -228,7 +228,7 @@ exports.getMoodDistribution = async (userId) => {
     const moodDays = {
       ecstatic: new Set(),
       happy: new Set(),
-      sad: new Set(),
+      stressed: new Set(),
       peaceful: new Set(),
     };
 
@@ -244,7 +244,7 @@ exports.getMoodDistribution = async (userId) => {
     const distribution = {
       ecstatic: { moodCount: 0, noteCount: 0 },
       happy: { moodCount: 0, noteCount: 0 },
-      sad: { moodCount: 0, noteCount: 0 },
+      stressed: { moodCount: 0, noteCount: 0 },
       peaceful: { moodCount: 0, noteCount: 0 },
     };
 
@@ -274,13 +274,13 @@ exports.getWeeklyMoodCounts = async (userId) => {
   });
 
   const days = {
-    mon: { ecstatic: 0, happy: 0, sad: 0, peaceful: 0 },
-    tue: { ecstatic: 0, happy: 0, sad: 0, peaceful: 0 },
-    wed: { ecstatic: 0, happy: 0, sad: 0, peaceful: 0 },
-    thu: { ecstatic: 0, happy: 0, sad: 0, peaceful: 0 },
-    fri: { ecstatic: 0, happy: 0, sad: 0, peaceful: 0 },
-    sat: { ecstatic: 0, happy: 0, sad: 0, peaceful: 0 },
-    sun: { ecstatic: 0, happy: 0, sad: 0, peaceful: 0 },
+    mon: { ecstatic: 0, happy: 0, stressed: 0, peaceful: 0 },
+    tue: { ecstatic: 0, happy: 0, stressed: 0, peaceful: 0 },
+    wed: { ecstatic: 0, happy: 0, stressed: 0, peaceful: 0 },
+    thu: { ecstatic: 0, happy: 0, stressed: 0, peaceful: 0 },
+    fri: { ecstatic: 0, happy: 0, stressed: 0, peaceful: 0 },
+    sat: { ecstatic: 0, happy: 0, stressed: 0, peaceful: 0 },
+    sun: { ecstatic: 0, happy: 0, stressed: 0, peaceful: 0 },
   };
 
   moods.forEach((m) => {

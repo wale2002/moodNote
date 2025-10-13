@@ -3,7 +3,7 @@ const moodMap = {
   ecstatic: 3,
   happy: 2,
   peaceful: 1,
-  sad: 0,
+  stressed: 0,
 };
 
 exports.mapMoodToValue = (mood) => moodMap[mood] || 0;
