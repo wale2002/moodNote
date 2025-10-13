@@ -85,7 +85,7 @@ exports.getIndividualMoodCounts = async (req, res) => {
     const moodCounts = {
       ecstatic: 0,
       happy: 0,
-      stressed: 0,
+      sad: 0,
       peaceful: 0,
     };
 
@@ -113,7 +113,7 @@ exports.getIndividualMoodCounts = async (req, res) => {
 
 exports.getMoodEntriesByType = async (req, res) => {
   const { mood } = req.params; // Expected moods: ecstatic, happy, stressed, peaceful
-  const validMoods = ["ecstatic", "happy", "stressed", "peaceful"];
+  const validMoods = ["ecstatic", "happy", "sad", "peaceful"];
 
   if (!validMoods.includes(mood)) {
     return res.status(400).json({
