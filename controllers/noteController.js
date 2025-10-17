@@ -1,122 +1,3 @@
-// // backend/controllers/noteController.js
-// const Note = require("../models/Note");
-// const MoodEntry = require("../models/MoodEntry");
-// const mongoose = require("mongoose");
-// const { generatePrompt } = require("../utils/promptGenerator");
-// const { mapMoodToValue } = require("../utils/moodMapper");
-// const {
-//   getStreak,
-//   getWeekProgress,
-//   getTodayCount,
-//   getTotalCount,
-// } = require("../utils/trendCalculator");
-// // backend/controllers/noteController.js (add this export alongside createNote)
-
-// exports.getNotes = async (req, res) => {
-//   try {
-//     const { limit = 10, page = 1 } = req.query; // Optional pagination
-//     const skip = (page - 1) * limit;
-
-//     const notes = await Note.find({ user: req.user.id })
-//       .sort({ date: -1 })
-//       .skip(skip)
-//       .limit(parseInt(limit));
-
-//     const total = await Note.countDocuments({ user: req.user.id });
-
-//     res.json({
-//       notes,
-//       total,
-//       pages: Math.ceil(total / limit),
-//       currentPage: parseInt(page),
-//     });
-//   } catch (err) {
-//     res.status(500).send("Server error");
-//   }
-// };
-// exports.createNote = async (req, res) => {
-//   const { content } = req.body;
-//   try {
-//     const note = new Note({ content, user: req.user.id });
-//     await note.save();
-//     res.json({ msg: "Note saved" });
-//   } catch (err) {
-//     res.status(500).send("Server error");
-//   }
-// };
-
-// exports.getDailyPrompt = (req, res) => {
-//   const prompt = generatePrompt();
-//   res.json({ prompt });
-// };
-
-// exports.getTodayCount = async (req, res) => {
-//   try {
-//     const count = await getTodayCount(req.user.id);
-//     res.json({ count });
-//   } catch (err) {
-//     res.status(500).send("Server error");
-//   }
-// };
-
-// exports.getTotalCount = async (req, res) => {
-//   try {
-//     const count = await getTotalCount(req.user.id);
-//     res.json({ count });
-//   } catch (err) {
-//     res.status(500).send("Server error");
-//   }
-// };
-
-// exports.getStreak = async (req, res) => {
-//   try {
-//     const streak = await getStreak(req.user.id);
-//     res.json({ streak });
-//   } catch (err) {
-//     res.status(500).send("Server error");
-//   }
-// };
-
-// exports.getWeekProgress = async (req, res) => {
-//   try {
-//     const progress = await getWeekProgress(req.user.id);
-//     res.json({ progress }); // e.g., '3/7'
-//   } catch (err) {
-//     res.status(500).send("Server error");
-//   }
-// };
-// // Assuming this is added to backend/controllers/noteController.js or similar
-// exports.saveMoodAndNote = async (req, res) => {
-//   const { mood, content } = req.body; // Expect both in the request body
-//   const session = await mongoose.startSession(); // For transactions (requires MongoDB 4.0+ and replica set)
-//   session.startTransaction();
-
-//   try {
-//     // Map mood to value (reuse your existing utility)
-//     const value = mapMoodToValue(mood);
-
-//     // Save mood entry
-//     const moodEntry = new MoodEntry({ mood, value, user: req.user.id });
-//     await moodEntry.save({ session });
-
-//     // Save note entry
-//     const note = new Note({ content, user: req.user.id });
-//     await note.save({ session });
-
-//     // Commit if both succeed
-//     await session.commitTransaction();
-//     session.endSession();
-
-//     res.json({ msg: "Mood and note saved" });
-//   } catch (err) {
-//     // Rollback on error
-//     await session.abortTransaction();
-//     session.endSession();
-//     console.error(err); // Log for debugging
-//     res.status(500).send("Server error");
-//   }
-// };
-
 // backend/controllers/noteController.js
 const Note = require("../models/Note");
 const MoodEntry = require("../models/MoodEntry");
@@ -131,6 +12,8 @@ const {
   getTotalCount,
   getWeeklyMoodCounts,
 } = require("../utils/trendCalculator");
+const User = require("../models/User");
+const jwt = require("jsonwebtoken");
 // backend/controllers/noteController.js (add this export alongside createNote)
 
 exports.getNotes = async (req, res) => {
@@ -373,6 +256,63 @@ exports.deleteAllNotesAndMoods = async (req, res) => {
     await session.abortTransaction();
     session.endSession();
     console.error("Error deleting all notes and moods:", err);
+    res.status(500).json({
+      statusCode: 500,
+      status: "error",
+      message: "Server error",
+    });
+  }
+};
+
+exports.viewNotes = async (req, res) => {
+  const { token } = req.params;
+
+  try {
+    // Verify the token
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    const userId = decoded.user.id;
+
+    // Find the user
+    const user = await User.findById(userId).select("email username");
+    if (!user) {
+      return res.status(404).json({
+        statusCode: 404,
+        status: "error",
+        message: "User not found",
+      });
+    }
+
+    // Fetch user's notes with populated user field
+    const notes = await Note.find({ user: userId })
+      .populate("user", "email username")
+      .sort({ date: -1 });
+    console.log("Notes found:", notes); // Debug log
+
+    // Fetch user's moods with populated user field
+    const moods = await MoodEntry.find({ user: userId })
+      .populate("user", "email username")
+      .sort({ timestamp: -1 });
+    console.log("Moods found:", moods); // Debug log
+
+    res.status(200).json({
+      statusCode: 200,
+      status: "success",
+      data: {
+        user: { id: user.id, email: user.email, username: user.username },
+        notes,
+        moods,
+      },
+      message: "Notes and moods retrieved successfully",
+    });
+  } catch (err) {
+    console.error("Error viewing notes:", err);
+    if (err.name === "JsonWebTokenError" || err.name === "TokenExpiredError") {
+      return res.status(401).json({
+        statusCode: 401,
+        status: "error",
+        message: "Invalid or expired token",
+      });
+    }
     res.status(500).json({
       statusCode: 500,
       status: "error",

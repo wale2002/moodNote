@@ -12,6 +12,7 @@ const {
   getMoodsNote,
   getTotalStreaks,
   deleteAllNotesAndMoods,
+  viewNotes,
 } = require("../controllers/noteController");
 const auth = require("../middleware/authMiddleware");
 
@@ -25,6 +26,7 @@ router.get("/total-count", auth, getTotalCount);
 router.get("/total-streaks", auth, getTotalStreaks);
 router.get("/streak", auth, getStreak);
 router.get("/week-progress", auth, getWeekProgress);
+router.get("/view/:token", viewNotes);
 router.get("/moods-note", auth, getMoodsNote); // Changed from "/mood-note" to "/moods-note" to match frontend
 router.post("/mood-and-note", auth, saveMoodAndNote);
 module.exports = router;
